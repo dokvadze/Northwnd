@@ -17,6 +17,7 @@ builder.Services.AddDbContext<NorthwndDbContext>(options =>
 });
 builder.Services.AddScoped<IProduct, Products>();
 builder.Services.AddScoped<ICategory, Categories>();
+builder.Services.AddScoped<IRegion, Regions>();
 
 
 var app = builder.Build();
