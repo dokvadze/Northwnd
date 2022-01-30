@@ -35,7 +35,6 @@ namespace Northwnd.BLL
 
             _northwndDbContext.Add(Product);
             await _northwndDbContext.SaveChangesAsync();
-
             return _northwndDbContext.Products.Where(x => x.UniqueId == newProductIdentifier).FirstOrDefault();
         }
        
