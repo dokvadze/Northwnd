@@ -49,7 +49,6 @@ namespace Northwnd.BLL
             Product.UnitsOnOrder = product.UnitsOnOrder;
             Product.Discontinued = product.Discontinued;
 
-
             _northwndDbContext.Products.Update(Product);
             await _northwndDbContext.SaveChangesAsync();
 
