@@ -62,6 +62,5 @@ namespace Northwnd.BLL
             await _northwndDbContext.SaveChangesAsync();
         }
 
-
     }
 }
