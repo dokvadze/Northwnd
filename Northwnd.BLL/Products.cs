@@ -37,7 +37,6 @@ namespace Northwnd.BLL
             await _northwndDbContext.SaveChangesAsync();
             return _northwndDbContext.Products.Where(x => x.UniqueId == newProductIdentifier).FirstOrDefault();
         }
-       
 
         public async Task<Product> EditProduct(int productId, ProductRequestModel product)
         {
