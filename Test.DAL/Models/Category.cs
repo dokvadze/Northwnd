@@ -14,8 +14,6 @@ namespace Northwnd.DAL.Models
         public byte[]? Picture { get; set; }
         public Guid? UniqueId { get; set; }
     }
-
-
     public class CategoryRequestModel
     {
         public string? CategoryName { get; set; }
