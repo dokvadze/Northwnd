@@ -27,10 +27,9 @@ namespace Northwnd.BLL
 
         public async Task<Category> AddCategory(CategoryRequestModel category)
         {
-
             var newCategoryIdentifier = Guid.NewGuid();
 
-            var Category = new Category
+            Category Category = new Category
             {
                 CategoryName = category.CategoryName,
                 Description = category.Description,
