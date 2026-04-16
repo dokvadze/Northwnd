@@ -20,13 +20,13 @@ namespace Northwnd.UnitTest
             };
 
             var mockSet = new Mock<DbSet<Category>>();
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(categories.AsQueryable().Provider);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(categories.AsQueryable().Expression);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(categories.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(() => categories.AsQueryable().Provider);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(() => categories.AsQueryable().Expression);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(() => categories.AsQueryable().ElementType);
             mockSet.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(categories.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Categories).Returns(mockSet.Object);
+            mockDbContext.SetupGet(m => m.Categories).Returns(mockSet.Object);
 
             var service = new Categories(mockDbContext.Object);
 
@@ -51,13 +51,13 @@ namespace Northwnd.UnitTest
             };
 
             var mockSet = new Mock<DbSet<Category>>();
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(categories.AsQueryable().Provider);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(categories.AsQueryable().Expression);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(categories.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(() => categories.AsQueryable().Provider);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(() => categories.AsQueryable().Expression);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(() => categories.AsQueryable().ElementType);
             mockSet.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(categories.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Categories).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Categories).Returns(mockSet.Object);
 
             var service = new Categories(mockDbContext.Object);
 
@@ -84,14 +84,14 @@ namespace Northwnd.UnitTest
             var categories = new List<Category>();
 
             var mockSet = new Mock<DbSet<Category>>();
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(categories.AsQueryable().Provider);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(categories.AsQueryable().Expression);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(categories.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(() => categories.AsQueryable().Provider);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(() => categories.AsQueryable().Expression);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(() => categories.AsQueryable().ElementType);
             mockSet.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(categories.AsQueryable().GetEnumerator());
             mockSet.Setup(d => d.Add(It.IsAny<Category>())).Callback<Category>(categories.Add);
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Categories).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Categories).Returns(mockSet.Object);
             mockDbContext.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var service = new Categories(mockDbContext.Object);
@@ -142,9 +142,9 @@ namespace Northwnd.UnitTest
 
             var categories = new List<Category> { existingCategory };
             var mockSet = new Mock<DbSet<Category>>();
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(categories.AsQueryable().Provider);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(categories.AsQueryable().Expression);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(categories.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(() => categories.AsQueryable().Provider);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(() => categories.AsQueryable().Expression);
+            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(() => categories.AsQueryable().ElementType);
             mockSet.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(categories.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();

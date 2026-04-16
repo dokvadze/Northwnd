@@ -26,9 +26,9 @@ namespace Northwnd.UnitTest
             };
 
             var mockSet = new Mock<DbSet<Product>>();
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(products.AsQueryable().Provider);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(products.AsQueryable().Expression);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(products.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(() => products.AsQueryable().Provider);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(() => products.AsQueryable().Expression);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(() => products.AsQueryable().ElementType);
             mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(products.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
@@ -57,10 +57,10 @@ namespace Northwnd.UnitTest
             };
 
             var mockSet = new Mock<DbSet<Product>>();
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(products.AsQueryable().Provider);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(products.AsQueryable().Expression);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(products.AsQueryable().ElementType);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(products.AsQueryable().GetEnumerator());
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(() => products.AsQueryable().Provider);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(() => products.AsQueryable().Expression);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(() => products.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(() => products.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
             mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
@@ -105,10 +105,10 @@ namespace Northwnd.UnitTest
             };
 
             var mockSet = new Mock<DbSet<Product>>();
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(products.AsQueryable().Provider);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(products.AsQueryable().Expression);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(products.AsQueryable().ElementType);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(products.AsQueryable().GetEnumerator());
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(() => products.AsQueryable().Provider);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(() => products.AsQueryable().Expression);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(() => products.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(() => products.AsQueryable().GetEnumerator());
             mockSet.Setup(d => d.Add(It.IsAny<Product>())).Callback<Product>(products.Add);
 
             var mockDbContext = new Mock<NorthwndDbContext>();
@@ -175,10 +175,10 @@ namespace Northwnd.UnitTest
 
             var products = new List<Product> { existingProduct };
             var mockSet = new Mock<DbSet<Product>>();
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(products.AsQueryable().Provider);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(products.AsQueryable().Expression);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(products.AsQueryable().ElementType);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(products.AsQueryable().GetEnumerator());
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(() => products.AsQueryable().Provider);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(() => products.AsQueryable().Expression);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(() => products.AsQueryable().ElementType);
+            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(() => products.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
             mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
