@@ -40,14 +40,13 @@ namespace Northwnd.BLL
             _northwndDbContext.Categories.Add(Category);
             await _northwndDbContext.SaveChangesAsync();
 
-            return _northwndDbContext.Categories.Where(x => x.UniqueId == newCategoryIdentifier).FirstOrDefault();
-
+            return Category;
         }
 
         public async Task DeleteCategory(int categoryId)
         {
-            var category = GetCategory(categoryId);
-            if (category != null) _northwndDbContext.Categories.Remove(category.Result);
+            var category = await GetCategory(categoryId);
+            if (category != null) _northwndDbContext.Categories.Remove(category);
             await _northwndDbContext.SaveChangesAsync();
         }
 

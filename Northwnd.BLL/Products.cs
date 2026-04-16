@@ -35,7 +35,7 @@ namespace Northwnd.BLL
 
             _northwndDbContext.Add(Product);
             await _northwndDbContext.SaveChangesAsync();
-            return _northwndDbContext.Products.Where(x => x.UniqueId == newProductIdentifier).FirstOrDefault();
+            return Product;
         }
 
         public async Task<Product> EditProduct(int productId, ProductRequestModel product)
@@ -57,8 +57,8 @@ namespace Northwnd.BLL
 
         public async Task DeleteProduct(int productId)
         {
-            var product = GetProduct(productId);
-            if (product != null) _northwndDbContext.Products.Remove(product.Result);
+            var product = await GetProduct(productId);
+            if (product != null) _northwndDbContext.Products.Remove(product);
             await _northwndDbContext.SaveChangesAsync();
         }
 

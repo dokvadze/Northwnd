@@ -115,7 +115,7 @@ namespace Northwnd.UnitTest
             mockSet.Setup(d => d.Remove(It.IsAny<Category>()));
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Categories).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Categories).Returns(mockSet.Object);
             mockDbContext.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var service = new Categories(mockDbContext.Object);
@@ -148,7 +148,7 @@ namespace Northwnd.UnitTest
             mockSet.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(categories.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Categories).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Categories).Returns(mockSet.Object);
             mockDbContext.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var service = new Categories(mockDbContext.Object);

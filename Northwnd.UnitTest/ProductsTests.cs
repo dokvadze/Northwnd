@@ -32,7 +32,7 @@ namespace Northwnd.UnitTest
             mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(products.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Products).Returns(mockSet.Object);
 
             var service = new Products(mockDbContext.Object);
 
@@ -63,7 +63,7 @@ namespace Northwnd.UnitTest
             mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(() => products.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Products).Returns(mockSet.Object);
 
             var service = new Products(mockDbContext.Object);
 
@@ -112,7 +112,7 @@ namespace Northwnd.UnitTest
             mockSet.Setup(d => d.Add(It.IsAny<Product>())).Callback<Product>(products.Add);
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Products).Returns(mockSet.Object);
             mockDbContext.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var service = new Products(mockDbContext.Object);
@@ -137,7 +137,7 @@ namespace Northwnd.UnitTest
             mockSet.Setup(d => d.Remove(It.IsAny<Product>()));
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Products).Returns(mockSet.Object);
             mockDbContext.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var service = new Products(mockDbContext.Object);
@@ -181,7 +181,7 @@ namespace Northwnd.UnitTest
             mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(() => products.AsQueryable().GetEnumerator());
 
             var mockDbContext = new Mock<NorthwndDbContext>();
-            mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
+            mockDbContext.SetupGet(d => d.Products).Returns(mockSet.Object);
             mockDbContext.Setup(d => d.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
             var service = new Products(mockDbContext.Object);
