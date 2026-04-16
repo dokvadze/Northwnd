@@ -2,19 +2,32 @@
 
 ## Project Overview
 
-Northwnd is an ASP.NET Core 6.0 monolithic application managing products, categories, and regions for the Northwind database. It follows a **3-layer architecture**: API (controllers) → BLL (business logic) → DAL (data access). Currently being modernized to **microservices architecture** (see `MICROSERVICE_MODERNIZATION_STRATEGY.md`).
+Northwnd is an **ASP.NET Core (.NET 10) 🚀** monolithic application managing products, categories, and regions for the Northwind database. It follows a **3-layer architecture**: API (controllers) → BLL (business logic) → DAL (data access). Currently being modernized to **microservices architecture** (see `MICROSERVICE_MODERNIZATION_STRATEGY.md`).
+
+### ✨ Recent Updates (April 2026)
+- **Upgraded to .NET 10.0** with latest compatible packages
+- **Enhanced Swagger/OpenAPI** with full documentation
+- **Comprehensive unit tests** with xUnit + Moq
+- **CI/CD pipelines** with GitHub Actions
+- **Production-ready startup scripts** for macOS/Linux/Windows
 
 ## Quick Start (2 Minutes)
+
+### Prerequisites
+**[⚠️ IMPORTANT]** Install .NET 10.0 SDK from: https://dotnet.microsoft.com/download/dotnet/10.0  
+See [DOTNET_10_INSTALLATION.md](../DOTNET_10_INSTALLATION.md) for detailed instructions
 
 ### Start the API with Swagger UI
 
 **macOS/Linux:**
 ```bash
+cd /Users/lashadokvadze/Desktop/Northwnd
 ./start-api.sh
 ```
 
 **Windows:**
 ```cmd
+cd /Users/lashadokvadze/Desktop/Northwnd
 start-api.bat
 ```
 
@@ -27,10 +40,10 @@ Then open: **https://localhost:7123** 🎉
 
 ### Run Unit Tests
 ```bash
-dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj
+dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj --configuration Release
 ```
 
-**For complete setup**, see [GETTING_STARTED.md](../GETTING_STARTED.md) and [TEST_DOCUMENTATION.md](../TEST_DOCUMENTATION.md)
+**For complete setup**, see [GETTING_STARTED.md](../GETTING_STARTED.md), [SWAGGER_GUIDE.md](../SWAGGER_GUIDE.md), and [TEST_DOCUMENTATION.md](../TEST_DOCUMENTATION.md)
 
 ---
 
@@ -62,7 +75,7 @@ dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj
 
 ### Building & Running
 ```bash
-# Build solution (requires .NET 6.0 SDK)
+# Build solution (requires .NET 10.0 SDK)
 dotnet build Northwnd.sln
 
 # Run API (starts Swagger UI on https://localhost:7xxx)
@@ -157,7 +170,7 @@ public async Task<ActionResult> GetProducts()
 
 ## Modernization Path (Microservices)
 
-**Current State**: Monolith
+**Current State**: Monolith on .NET 10 with xUnit tests  
 **Target State**: 3 independent microservices + API Gateway
 
 For detailed strategy, see `MICROSERVICE_MODERNIZATION_STRATEGY.md` and `QUICK_START_IMPLEMENTATION.md`
@@ -165,9 +178,10 @@ For detailed strategy, see `MICROSERVICE_MODERNIZATION_STRATEGY.md` and `QUICK_S
 ### Key Changes When Modernizing
 1. Each service gets **separate database** (ProductDb, CategoryDb, RegionDb)
 2. Communication via **HTTP REST** between services (no shared DbContext)
-3. Upgrade to **.NET 8.0** and **EF Core 8.0**
-4. Add **API Gateway** for routing
-5. Switch to **xUnit** for testing (from MSTest)
+3. Add **API Gateway** for routing
+4. Implement **event-driven architecture** (event bus)
+5. Add **service discovery** (Consul/Eureka)
+6. Containerize with **Docker & Kubernetes**
 
 ## Common Tasks & How To
 
@@ -216,10 +230,12 @@ For detailed strategy, see `MICROSERVICE_MODERNIZATION_STRATEGY.md` and `QUICK_S
 
 ## Key NuGet Dependencies
 
-- `Microsoft.EntityFrameworkCore` (6.0.1): ORM for data access
-- `Microsoft.EntityFrameworkCore.SqlServer` (6.0.1): SQL Server provider
-- `Swashbuckle.AspNetCore` (6.2.3): Swagger/OpenAPI documentation
-- `MSTest` (current) → Migrate to `xUnit` + `Moq` during modernization
+- `Microsoft.EntityFrameworkCore` (8.0.0): ORM for data access (EF Core 8 - latest stable)
+- `Microsoft.EntityFrameworkCore.SqlServer` (8.0.0): SQL Server provider
+- `Swashbuckle.AspNetCore` (6.6.2): Swagger/OpenAPI documentation
+- `xunit` (2.6.6): Unit testing framework
+- `Moq` (4.20.70): Mocking library
+- **Runtime**: .NET 10.0 (latest LTS-equivalent)
 
 ## Testing Strategy
 

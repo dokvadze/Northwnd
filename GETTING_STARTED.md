@@ -4,7 +4,8 @@
 
 Before running the Northwnd API, ensure you have the following installed:
 
-- **.NET 6.0 SDK** or later ([Download](https://dotnet.microsoft.com/download/dotnet/6.0))
+- **.NET 10.0 SDK** or later ([Download](https://dotnet.microsoft.com/download/dotnet/10.0)) 🆕
+  - See [DOTNET_10_INSTALLATION.md](./DOTNET_10_INSTALLATION.md) for detailed installation instructions
 - **SQL Server** (Express or higher) or connection to remote instance
 - **Git** (for version control)
 
@@ -13,7 +14,7 @@ Before running the Northwnd API, ensure you have the following installed:
 ### 1. Verify .NET Installation
 ```bash
 dotnet --version
-# Should output: 6.0.xxx or higher
+# Should output: 10.0.xxx or higher
 ```
 
 ### 2. Clone or Navigate to Project
