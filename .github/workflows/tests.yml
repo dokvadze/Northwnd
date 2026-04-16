@@ -1,0 +1,41 @@
+name: .NET Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        dotnet-version: ['6.0.x']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Restore dependencies
+      run: dotnet restore Northwnd.sln
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release Northwnd.sln
+
+    - name: Run unit tests
+      run: dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj --no-build --verbosity normal --configuration Release --settings runsettings.xml
+
+    - name: Generate test report
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: .NET Test Results
+        path: '**/TestResults/*.trx'
+        reporter: 'dotnet trx'
+        fail-on-error: false

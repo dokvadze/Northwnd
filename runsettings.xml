@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>0</MaxCpuCount>
+    <ResultsDirectory>.\TestResults</ResultsDirectory>
+    <TestSessionTimeout>600000</TestSessionTimeout>
+  </RunConfiguration>
+
+  <CodeCoverage>
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*Northwnd\..*\.dll$</ModulePath>
+        <ModulePath>.*Test\..*\.dll$</ModulePath>
+      </Include>
+      <Exclude>
+        <ModulePath>.*Tests.*</ModulePath>
+      </Exclude>
+    </ModulePaths>
+
+    <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+    <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+    <CollectAspDotNetCodeCoverage>False</CollectAspDotNetCodeCoverage>
+    <CollectManagedCodeCoverage>True</CollectManagedCodeCoverage>
+    <CollectNativeCodeCoverage>False</CollectNativeCodeCoverage>
+  </CodeCoverage>
+
+  <LoggerRunSettings>
+    <Verbosity>Quiet</Verbosity>
+  </LoggerRunSettings>
+</RunSettings>

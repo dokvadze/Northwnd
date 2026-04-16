@@ -1,0 +1,32 @@
+name: .NET Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        dotnet-version: ['6.0.x']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+
+    - name: Restore dependencies
+      run: dotnet restore Northwnd.sln
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release Northwnd.sln
+
+    - name: Check for build errors
+      run: dotnet build --no-restore --configuration Release --no-cache Northwnd.sln

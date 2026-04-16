@@ -8,9 +8,31 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Northwnd API",
+        Version = "v1",
+        Description = "ASP.NET Core 6.0 REST API for Northwind database management",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Northwnd Development Team",
+            Email = "dev@northwnd.local"
+        },
+        License = new Microsoft.OpenApi.Models.OpenApiLicense
+        {
+            Name = "MIT"
+        }
+    });
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
 builder.Services.AddDbContext<NorthwndDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("NorthwndConntectionString"));
@@ -26,7 +48,13 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Northwnd API v1");
+        c.RoutePrefix = string.Empty;
+        c.DocumentTitle = "Northwnd API Documentation";
+        c.DefaultModelsExpandDepth(1);
+    });
 }
 
 
