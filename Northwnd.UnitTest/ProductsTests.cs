@@ -133,7 +133,7 @@ namespace Northwnd.UnitTest
             var product = new Product { ProductID = 1, ProductName = "Product 1", UniqueId = Guid.NewGuid() };
 
             var mockSet = new Mock<DbSet<Product>>();
-            mockSet.Setup(d => d.Find(It.IsAny<object[]>())).ReturnsAsync(product);
+            mockSet.Setup(d => d.Find(It.IsAny<object[]>())).Returns(product);
             mockSet.Setup(d => d.Remove(It.IsAny<Product>()));
 
             var mockDbContext = new Mock<NorthwndDbContext>();

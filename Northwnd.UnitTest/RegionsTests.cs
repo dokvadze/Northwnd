@@ -37,7 +37,7 @@ namespace Northwnd.UnitTest
             // Arrange
             var mockDbContext = new Mock<NorthwndDbContext>();
             var service = new Regions(mockDbContext.Object);
-            var region = new Region { RegionID = 1, RegionDescription = "Test" };
+            var region = new Region { RegionId = 1, RegionDescription = "Test" };
 
             // Act & Assert
             await Assert.ThrowsAsync<NotImplementedException>(() => service.AddRegion(region));
@@ -49,7 +49,7 @@ namespace Northwnd.UnitTest
             // Arrange
             var mockDbContext = new Mock<NorthwndDbContext>();
             var service = new Regions(mockDbContext.Object);
-            var region = new Region { RegionID = 1, RegionDescription = "Test" };
+            var region = new Region { RegionId = 1, RegionDescription = "Test" };
 
             // Act & Assert
             await Assert.ThrowsAsync<NotImplementedException>(() => service.EditRegion(1, region));

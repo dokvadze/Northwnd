@@ -111,7 +111,7 @@ namespace Northwnd.UnitTest
             var category = new Category { CategoryID = 1, CategoryName = "Electronics", UniqueId = Guid.NewGuid() };
 
             var mockSet = new Mock<DbSet<Category>>();
-            mockSet.Setup(d => d.Find(It.IsAny<object[]>())).ReturnsAsync(category);
+            mockSet.Setup(d => d.Find(It.IsAny<object[]>())).Returns(category);
             mockSet.Setup(d => d.Remove(It.IsAny<Category>()));
 
             var mockDbContext = new Mock<NorthwndDbContext>();
