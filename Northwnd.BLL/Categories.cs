@@ -19,9 +19,7 @@ namespace Northwnd.BLL
 
         public async Task<Category> GetCategory(int categoryId)
         {
-            var result = await GetCategories();
-            return result.Where(x => x.CategoryID == categoryId).FirstOrDefault();
-
+            return _northwndDbContext.Categories.Where(x => x.CategoryID == categoryId).FirstOrDefault();
         }
 
 
