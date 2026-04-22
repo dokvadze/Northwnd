@@ -19,7 +19,9 @@ namespace Northwnd.BLL
 
         public async Task<Category> GetCategory(int categoryId)
         {
-            return _northwndDbContext.Categories.Where(x => x.CategoryID == categoryId).FirstOrDefault();
+            var result = await GetCategories();
+            return result.Where(x => x.CategoryID == categoryId).FirstOrDefault();
+
         }
 
 
@@ -38,7 +40,8 @@ namespace Northwnd.BLL
             _northwndDbContext.Categories.Add(Category);
             await _northwndDbContext.SaveChangesAsync();
 
-            return Category;
+            return _northwndDbContext.Categories.Where(x => x.UniqueId == newCategoryIdentifier).FirstOrDefault();
+
         }
 
         public async Task DeleteCategory(int categoryId)

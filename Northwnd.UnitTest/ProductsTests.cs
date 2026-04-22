@@ -131,13 +131,9 @@ namespace Northwnd.UnitTest
             // Arrange
             var productId = 1;
             var product = new Product { ProductID = 1, ProductName = "Product 1", UniqueId = Guid.NewGuid() };
-            var products = new List<Product> { product };
 
             var mockSet = new Mock<DbSet<Product>>();
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(() => products.AsQueryable().Provider);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.Expression).Returns(() => products.AsQueryable().Expression);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.ElementType).Returns(() => products.AsQueryable().ElementType);
-            mockSet.As<IQueryable<Product>>().Setup(m => m.GetEnumerator()).Returns(() => products.AsQueryable().GetEnumerator());
+            mockSet.Setup(d => d.Find(It.IsAny<object[]>())).Returns(product);
             mockSet.Setup(d => d.Remove(It.IsAny<Product>()));
 
             var mockDbContext = new Mock<NorthwndDbContext>();

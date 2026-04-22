@@ -1,203 +1,313 @@
 # AGENTS.md - AI Agent Guidelines for Northwnd
 
 ## Quick Context
-**Northwnd** is an ASP.NET Core 10.0 monolithic application on the path to microservices. It manages three domains (Products, Categories, Regions) via a 3-layer architecture: API → BLL → DAL. Single SQL Server database. **Actively modernizing** to microservices (see `MICROSERVICE_MODERNIZATION_STRATEGY.md`).
+**Northwnd** is an ASP.NET Core 10.0 monolithic application managing **Products, Categories, Regions** via a **3-layer architecture**: API → BLL → DAL. Single SQL Server database on path to microservices (see `MICROSERVICE_MODERNIZATION_STRATEGY.md`).
+
+**Runtime**: .NET 10.0 SDK required. **Testing**: xUnit + Moq. **Build**: `dotnet build Northwnd.sln`
 
 ---
 
-## Architecture: The 3-Layer Pattern
-
-**You MUST understand this flow to work effectively:**
+## The One Thing You Must Understand: Request Flow
 
 ```
 HTTP Request
     ↓
 [ProductController] (Test.API/Controllers/)
-    ↓ (depends on: IProduct interface)
-[Products BLL] (Northwnd.BLL/Products.cs) - business logic here
-    ↓ (depends on: NorthwndDbContext)
-[NorthwndDbContext] (Test.DAL/) - queries Products DbSet
+    ├─ Interface: IProduct (injected in constructor)
+    ↓
+[Products BLL] (Northwnd.BLL/Products.cs)
+    ├─ Receives: NorthwndDbContext via constructor
+    ├─ Methods are ASYNC but often DON'T AWAIT (see Known Issues)
+    ↓
+[NorthwndDbContext] (Test.DAL/)
+    ├─ DbSet<Product>, DbSet<Category>, DbSet<Region>
     ↓
 [SQL Server]
 ```
 
-**Key insight**: Each domain has 3 implementations (Products/Categories/Regions) following the EXACT same pattern. Copy-paste one, adjust names.
+**KEY**: Each entity (Product/Category/Region) follows the EXACT same pattern across all 3 layers. Copy-paste to add domains.
 
 ---
 
-## Critical Code Locations & Patterns
+## Critical Patterns & Gotchas
 
-### 1. **Dependency Injection Hub** → `Test.API/Program.cs`
-- **Single source of truth** for all service registration
-- **Pattern**: `builder.Services.AddScoped<IInterface, Implementation>()`
-- **When adding features**: Register new BLL classes here FIRST
-- **Common mistake**: Forgetting to register → runtime null reference
+### 1. Dependency Injection (Program.cs)
+```csharp
+// Test.API/Program.cs - Single source of truth
+builder.Services.AddDbContext<NorthwndDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("NorthwndConntectionString"))
+);
+builder.Services.AddScoped<IProduct, Products>();
+builder.Services.AddScoped<ICategory, Categories>();
+builder.Services.AddScoped<IRegion, Regions>();
+```
+**Rule**: Always register interfaces → implementations. Forget registration = null reference at runtime.
 
-### 2. **Controller Pattern** → `Test.API/Controllers/*.cs`
-- **Route format**: `[Route("api/GetProducts")]` NOT REST style
-- **Always return**: `ActionResult` or `IActionResult` (not raw objects)
-- **Injection**: Interface in constructor (e.g., `IProduct product`)
-- **Example endpoint**:
-  ```csharp
-  [HttpGet]
-  [Route("api/GetProductById/{productId}")]
-  public async Task<ActionResult> GetProductById(int productId)
-  {
-      var result = await _product.GetProduct(productId);
-      return Ok(result);
-  }
-  ```
+### 2. Controller Endpoints (NOT REST-style)
+```csharp
+[HttpGet]
+[Route("api/GetProductById/{productId}")]
+public async Task<ActionResult> GetProductById(int productId)
+{
+    var result = await _product.GetProduct(productId);
+    return Ok(result);  // Always wrap in Ok()/BadRequest()/NotFound()
+}
+```
+**Convention**: Routes are `api/{ActionName}` not `api/{resource}/{id}`. Return `ActionResult` or `IActionResult`.
 
-### 3. **BLL Service Pattern** → `Northwnd.BLL/{Entity}.cs`
-- **Receives** `NorthwndDbContext` in constructor
-- **Private field**: `private NorthwndDbContext _northwndDbContext;`
-- **⚠️ CRITICAL BUG**: Methods marked `async Task<T>` but **DON'T AWAIT** queries
-  - Current: `return _northwndDbContext.Products.ToList();` (synchronous)
-  - Should be: `return await _northwndDbContext.Products.ToListAsync();`
-  - **Affects ALL services** (Products, Categories, Regions)
-  - **Your fix strategy**: Add `.Async()` to all EF calls
-- **DTO separation**: Use `ProductRequestModel` for POST/PUT inputs; `Product` entity for responses
+### 3. BLL Implementation (⚠️ ASYNC BUG PRESENT)
+```csharp
+public class Products : IProduct
+{
+    private NorthwndDbContext _northwndDbContext;
+    
+    public Products(NorthwndDbContext northwndDbContext)
+    {
+        _northwndDbContext = northwndDbContext;
+    }
+    
+    // ⚠️ BUG: Marked async Task<T> but returns sync .ToList()
+    public async Task<List<Product>> GetProducts() 
+        => _northwndDbContext.Products.ToList();
+    
+    // SHOULD BE:
+    // public async Task<List<Product>> GetProducts()
+    //     => await _northwndDbContext.Products.ToListAsync();
+}
+```
+**Impact**: Affects ALL services (Products, Categories, Regions). Silent async/sync mismatch causes thread pool starvation under load.
 
-### 4. **DbContext & Models** → `Test.DAL/`
-- **Single context**: `NorthwndDbContext` manages all 3 DbSets
-- **Models live here**: `Test.DAL/Models/{Entity}.cs`
-- **Each model has entity + RequestModel** (DTO twin)
-- **Database typo preserved**: Connection string key is `"NorthwndConntectionString"` (not "ConnectionString") - DO NOT FIX (backward compat)
+**When fixing**: 
+1. Add `.ToListAsync()`, `.FirstOrDefaultAsync()`, `.SingleOrDefaultAsync()` to all EF queries
+2. Use `await` for all database operations
+3. Search-replace `.ToList()` → `.ToListAsync()` in `Northwnd.BLL/*.cs`
 
-### 5. **Tests** → `Northwnd.UnitTest/`
-- **Framework**: xUnit (not MSTest, despite legacy packages)
-- **Pattern**: Mock DbContext → inject into service → assert
-- **Mock setup complexity**: Must mock DbSet + IQueryable interface for tests to work
-- **Example**: See `ProductsTests.cs` lines 19-45 for correct mock pattern
+### 4. Models & DTOs (Test.DAL/Models)
+```csharp
+// Entity (receives from DB & returns to API)
+public class Product
+{
+    public int ProductID { get; set; }
+    public string? ProductName { get; set; }
+    public decimal UnitPrice { get; set; }
+    public Guid? UniqueId { get; set; }  // New field
+}
+
+// DTO (input for POST/PUT only)
+public class ProductRequestModel
+{
+    public string? ProductName { get; set; }
+    public decimal UnitPrice { get; set; }
+    // No ProductID, UniqueId (server-generated)
+}
+```
+**Rule**: POST/PUT use `*RequestModel`. GET responses use full entity.
+
+### 5. Database Connection String (Typo Preserved)
+```json
+{
+    "ConnectionStrings": {
+        "NorthwndConntectionString": "Server=...;Database=Northwind;..."
+    }
+}
+```
+Key is `"NorthwndConntectionString"` (missing 'e' in "Connection"). **DO NOT FIX** - breaks legacy apps.
 
 ---
 
-## Startup & Debugging Commands
+## Essential Commands
 
 | Task | Command |
 |------|---------|
+| Run API (Swagger UI: https://localhost:7123) | `./start-api.sh` or `dotnet run -p Test.API/Northwnd.API.csproj` |
+| Run all tests | `dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj --configuration Release` |
+| Run single test class | `dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj -k ProductsTests` |
+| Add EF migration | `dotnet ef migrations add MigrationName -p Test.DAL/Northwnd.DAL.csproj -s Test.API/Northwnd.API.csproj` |
+| Apply migration | `dotnet ef database update -p Test.DAL/Northwnd.DAL.csproj -s Test.API/Northwnd.API.csproj` |
 | Build solution | `dotnet build Northwnd.sln` |
-| Run API (Swagger on https://localhost:7123) | `./start-api.sh` OR `dotnet run --project Test.API/Northwnd.API.csproj` |
-| Run tests | `dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj --configuration Release` |
-| Create migration | `dotnet ef migrations add MigrationName -p Test.DAL/Northwnd.DAL.csproj -s Test.API/Northwnd.API.csproj` |
-| Update database | `dotnet ef database update -p Test.DAL/Northwnd.DAL.csproj -s Test.API/Northwnd.API.csproj` |
 
 ---
 
-## Common Development Tasks
-
-### Adding a New Endpoint
-1. Create method in `Interfaces/IEntity.cs` (e.g., `Task<T> SearchByName(string name)`)
-2. Implement in `Northwnd.BLL/Entity.cs` (remember: **use `.ToListAsync()` not `.ToList()`**)
-3. Add controller action in `Test.API/Controllers/EntityController.cs`
-4. Register in `Program.cs` if it's a NEW service (not needed for existing ones)
-5. Test via Swagger UI at `https://localhost:7123/swagger`
-
-### Modifying an Entity Model
-1. Edit `Test.DAL/Models/Entity.cs` and `EntityRequestModel`
-2. Create migration: `dotnet ef migrations add PropertyName`
-3. Update database: `dotnet ef database update`
-4. Verify SQL Server schema matches
-
-### Running Specific Tests
-```bash
-# Single test class
-dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj -k ProductsTests
-
-# Single test method
-dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj -k "GetProducts_ShouldReturnAllProducts"
-```
-
----
-
-## Project Structure (Map to Domains)
-
-| Folder/File | Purpose | Key Files |
-|---|---|---|
-| `Test.API/` | REST API + Swagger | `Program.cs` (DI), `Controllers/*.cs` (endpoints) |
-| `Northwnd.BLL/` | Business logic | `Products.cs`, `Categories.cs`, `Regions.cs`, `Interfaces/*.cs` |
-| `Test.DAL/` | Data access | `NorthwndDbContext.cs`, `Models/*.cs` |
-| `Test.Web/` | Razor Pages UI | Calls API endpoints (separate frontend) |
-| `Northwnd.UnitTest/` | Tests | xUnit + Moq mocks; test against mocked DbContext |
-
----
-
-## Performance & Known Issues
-
-### High-Priority Fixes (Blocking)
-1. **Missing .Async()**: All `.ToList()` → `.ToListAsync()` in BLL
-2. **No .Include()**: Related entities not loaded (N+1 query risk)
-   - Example: Loading Products should `.Include(p => p.Category)` 
-3. **No CORS configured**: UI may fail if on different port
-
-### Architecture Debt
-- Monolithic design prevents independent scaling
-- Single database limits isolation between domains
-- **Modernization plan**: Split into 3 microservices (ProductAPI, CategoryAPI, RegionAPI) with separate databases + API Gateway
-
----
-
-## Testing Strategy
-
-**Current approach**: Mock the `NorthwndDbContext`, inject into BLL service, verify calls and returns.
+## Mocking Pattern for Tests (xUnit + Moq)
 
 ```csharp
-// Mock setup pattern (from ProductsTests.cs)
-var mockSet = new Mock<DbSet<Product>>();
-mockSet.As<IQueryable<Product>>().Setup(m => m.Provider).Returns(products.AsQueryable().Provider);
-// ... set Expression, ElementType, GetEnumerator similarly
+[Fact]
+public async Task GetProducts_ReturnsAllProducts()
+{
+    // Arrange: Create mock data
+    var products = new List<Product>
+    {
+        new Product { ProductID = 1, ProductName = "Product 1" }
+    };
 
-var mockDbContext = new Mock<NorthwndDbContext>();
-mockDbContext.Setup(d => d.Products).Returns(mockSet.Object);
+    // Arrange: Setup mock DbSet (MUST implement IQueryable)
+    var mockSet = new Mock<DbSet<Product>>();
+    mockSet.As<IQueryable<Product>>()
+        .Setup(m => m.Provider).Returns(products.AsQueryable().Provider);
+    mockSet.As<IQueryable<Product>>()
+        .Setup(m => m.Expression).Returns(products.AsQueryable().Expression);
+    mockSet.As<IQueryable<Product>>()
+        .Setup(m => m.ElementType).Returns(products.AsQueryable().ElementType);
+    mockSet.As<IQueryable<Product>>()
+        .Setup(m => m.GetEnumerator()).Returns(products.AsQueryable().GetEnumerator());
 
-var service = new Products(mockDbContext.Object);
-var result = await service.GetProducts();
-Assert.NotNull(result);
+    // Arrange: Setup mock DbContext
+    var mockContext = new Mock<NorthwndDbContext>();
+    mockContext.SetupGet(d => d.Products).Returns(mockSet.Object);
+
+    // Act
+    var service = new Products(mockContext.Object);
+    var result = await service.GetProducts();
+
+    // Assert
+    Assert.NotNull(result);
+    Assert.Equal(1, result.Count);
+}
+```
+**CRITICAL**: Mock DbSet must implement all IQueryable properties (Provider, Expression, ElementType, GetEnumerator).
+See `ProductsTests.cs` lines 19-46 for real example.
+
+---
+
+## Project Layout
+
+| Path | Purpose |
+|------|---------|
+| `Test.API/Program.cs` | DI hub, Swagger config, middleware setup |
+| `Test.API/Controllers/*.cs` | HTTP endpoints (ProductController, CategoryController, RegionController) |
+| `Northwnd.BLL/{Entity}.cs` | Business logic (Products, Categories, Regions) |
+| `Northwnd.BLL/Interfaces/I{Entity}.cs` | Contracts (IProduct, ICategory, IRegion) |
+| `Test.DAL/NorthwndDbContext.cs` | EF Core DbContext with 3 DbSets |
+| `Test.DAL/Models/{Entity}.cs` | Entity + RequestModel DTOs |
+| `Northwnd.UnitTest/{Entity}Tests.cs` | xUnit tests with Moq mocks |
+| `Test.Web/` | Separate Razor Pages UI (calls API) |
+
+---
+
+## Namespaces (Misaligned with Folders - Tech Debt)
+
+| Code | Namespace |
+|------|-----------|
+| Controllers | `Test.API.Controllers` |
+| Interfaces | `Northwnd.API.Interfaces` (NOT in Test.API!) |
+| BLL implementations | `Northwnd.BLL` |
+| DbContext | `Test.DAL` |
+| Entity models | `Northwnd.DAL.Models` |
+
+This mismatch is legacy tech debt. When refactoring, consider aligning paths with namespaces.
+
+---
+
+## Adding a New Endpoint (Step-by-Step)
+
+**Goal**: Add `SearchProductsByName(string name)` endpoint
+
+1. **Interface** (`Northwnd.BLL/Interfaces/IProduct.cs`):
+   ```csharp
+   Task<List<Product>> SearchProductsByName(string name);
+   ```
+
+2. **BLL Implementation** (`Northwnd.BLL/Products.cs`):
+   ```csharp
+   public async Task<List<Product>> SearchProductsByName(string name)
+   {
+       return await _northwndDbContext.Products
+           .Where(p => p.ProductName.Contains(name))
+           .ToListAsync();  // IMPORTANT: Use async!
+   }
+   ```
+
+3. **Controller** (`Test.API/Controllers/ProductController.cs`):
+   ```csharp
+   [HttpGet]
+   [Route("api/SearchProductsByName/{name}")]
+   public async Task<ActionResult> SearchProductsByName(string name)
+   {
+       var result = await _product.SearchProductsByName(name);
+       return Ok(result);
+   }
+   ```
+
+4. **Register in DI** (if new service - not needed for existing `IProduct`):
+   Already registered in Program.cs via `builder.Services.AddScoped<IProduct, Products>()`.
+
+5. **Test** (`Northwnd.UnitTest/ProductsTests.cs`):
+   Add test following ProductsTests.cs pattern (mock DbSet, mock context, inject, assert).
+
+6. **Verify**: Run `dotnet test` and test via Swagger UI at https://localhost:7123/swagger.
+
+---
+
+## Known Issues & Fixes
+
+### 🔴 High Priority
+1. **Async methods don't await EF calls** (ALL services)
+   - **Symptom**: Methods return Task but execute synchronously
+   - **Fix**: Add `.Async()` suffix to all EF methods (`ToListAsync()`, `FirstOrDefaultAsync()`)
+   - **Files**: Northwnd.BLL/Products.cs, Categories.cs, Regions.cs
+
+2. **No .Include() for relationships** (N+1 queries)
+   - **Symptom**: Slow queries when accessing related data
+   - **Fix**: Use `.Include(p => p.Category)` when loading related entities
+
+3. **No CORS configured**
+   - **Symptom**: UI on different port fails with CORS errors
+   - **Fix**: Add `builder.Services.AddCors()` in Program.cs
+
+### 🟡 Medium Priority
+- Monolithic design prevents independent scaling
+- Single database limits multi-tenancy/isolation
+- See `MICROSERVICE_MODERNIZATION_STRATEGY.md` for split plan
+
+---
+
+## Architecture Roadmap
+
+| Phase | State | Target |
+|-------|-------|--------|
+| **Current** | Monolith (.NET 10) on SQL Server | 3 Microservices (ProductAPI, CategoryAPI, RegionAPI) |
+| **Databases** | Shared NorthwndDb | Separate ProductDb, CategoryDb, RegionDb |
+| **Communication** | In-process DI | REST/gRPC + API Gateway |
+| **Testing** | xUnit + Moq DbContext mocks | Integration tests with TestContainers |
+| **CI/CD** | GitHub Actions | Container orchestration (Docker/K8s) |
+
+---
+
+## Quick Reference: The 3-Domain Pattern
+
+**Each of Products, Categories, Regions follows this structure:**
+
+```
+IProduct ← implemented by → Products (BLL)
+    ↓                          ↓
+ProductController        uses NorthwndDbContext
+    ↓                          ↓
+HTTP routes                  Product entity
+                                  ↓
+                          ProductRequestModel (DTO)
 ```
 
----
-
-## Interfaces You'll Encounter
-
-| Interface | Location | Implementations |
-|---|---|---|
-| `IProduct` | `Northwnd.BLL/Interfaces/IProduct.cs` | `Products` class |
-| `ICategory` | `Northwnd.BLL/Interfaces/ICategory.cs` | `Categories` class |
-| `IRegion` | `Northwnd.BLL/Interfaces/IRegion.cs` | `Regions` class |
-
-Each interface defines CRUD + query methods (GetAll, GetById, Add, Edit, Delete patterns).
-
----
-
-## Namespace Organization
-
-- **API namespace**: `Test.API.Controllers`
-- **BLL namespaces**: `Northwnd.API.Interfaces` (interfaces), `Northwnd.BLL` (implementations)
-- **DAL namespaces**: `Test.DAL` (context), `Northwnd.DAL.Models` (entities)
-- **Note**: Namespace names don't perfectly align with folder structure (tech debt from legacy refactoring)
+**To add a 4th domain (Suppliers)**:
+1. Create `Supplier.cs`, `SupplierRequestModel` in Models/
+2. Create `Suppliers.cs` BLL class implementing `ISupplier` interface
+3. Create `SupplierController.cs` with same endpoint patterns
+4. Register in Program.cs: `builder.Services.AddScoped<ISupplier, Suppliers>();`
+5. Add `public DbSet<Supplier> Suppliers { get; set; }` to NorthwndDbContext
 
 ---
 
 ## Before You Code: Checklist
 
-- [ ] Read `Program.cs` to understand DI registration
-- [ ] Check if feature already exists in a service (copy pattern)
-- [ ] **Use `.ToListAsync()` + `await` in BLL** (not sync `.ToList()`)
-- [ ] Add XML comments to new public methods (Swagger docs)
-- [ ] Register new services in `Program.cs` before using
-- [ ] Test via Swagger UI after deployment
-- [ ] Run unit tests: `dotnet test` before committing
+- [ ] `.NET 10.0 SDK` installed (`dotnet --version`)
+- [ ] Solution builds: `dotnet build Northwnd.sln`
+- [ ] Tests pass: `dotnet test Northwnd.UnitTest/Northwnd.UnitTest.csproj`
+- [ ] API runs: `./start-api.sh` → Swagger UI at https://localhost:7123
+- [ ] Existing patterns understood (read ProductsTests.cs and Products.cs)
+- [ ] Async/await used correctly (`.ToListAsync()` not `.ToList()`)
+- [ ] New services registered in Program.cs BEFORE using
+- [ ] XML comments added to public methods (for Swagger docs)
 
 ---
 
-## Version Info & Future Roadmap
-
-- **Current**: .NET 10.0 monolith on SQL Server
-- **Target**: Microservices (3 independent services + API Gateway)
-- **Key files tracking modernization**: `MICROSERVICE_MODERNIZATION_STRATEGY.md`, `QUICK_START_IMPLEMENTATION.md`
-- **CI/CD**: GitHub Actions (workflows in `.github/workflows/`)
-
----
-
-**Last updated**: April 2026 | **Maintained by**: Northwnd Development Team
+**Last Updated**: April 2026 | **Status**: Monolith (Microservices planned) | **Maintainer**: Northwnd Development Team
 

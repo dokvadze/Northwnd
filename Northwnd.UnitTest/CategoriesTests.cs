@@ -109,13 +109,9 @@ namespace Northwnd.UnitTest
             // Arrange
             var categoryId = 1;
             var category = new Category { CategoryID = 1, CategoryName = "Electronics", UniqueId = Guid.NewGuid() };
-            var categories = new List<Category> { category };
 
             var mockSet = new Mock<DbSet<Category>>();
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Provider).Returns(() => categories.AsQueryable().Provider);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.Expression).Returns(() => categories.AsQueryable().Expression);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.ElementType).Returns(() => categories.AsQueryable().ElementType);
-            mockSet.As<IQueryable<Category>>().Setup(m => m.GetEnumerator()).Returns(() => categories.AsQueryable().GetEnumerator());
+            mockSet.Setup(d => d.Find(It.IsAny<object[]>())).Returns(category);
             mockSet.Setup(d => d.Remove(It.IsAny<Category>()));
 
             var mockDbContext = new Mock<NorthwndDbContext>();
