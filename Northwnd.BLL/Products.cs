@@ -6,7 +6,6 @@ namespace Northwnd.BLL
 {
     public class Products : IProduct
     {
-
         private NorthwndDbContext _northwndDbContext;
 
         public Products(NorthwndDbContext northwndDbContext)
@@ -15,7 +14,10 @@ namespace Northwnd.BLL
         }
 
         public async Task<List<Product>> GetProducts() => _northwndDbContext.Products.ToList();
-        public async Task<Product> GetProduct(int productId) => _northwndDbContext.Products.Where(x => x.ProductID == productId).FirstOrDefault();
+
+        public async Task<Product> GetProduct(int productId) =>
+            _northwndDbContext.Products.Where(x => x.ProductID == productId).FirstOrDefault();
+
         public async Task<Product> AddProduct(ProductRequestModel product)
         {
             var newProductIdentifier = Guid.NewGuid();
@@ -32,6 +34,7 @@ namespace Northwnd.BLL
                 Discontinued = product.Discontinued,
                 UniqueId = newProductIdentifier
             };
+            if (Product == null) throw new ArgumentNullException(nameof(Product));
 
             _northwndDbContext.Add(Product);
             await _northwndDbContext.SaveChangesAsync();
@@ -61,6 +64,5 @@ namespace Northwnd.BLL
             if (product != null) _northwndDbContext.Products.Remove(product);
             await _northwndDbContext.SaveChangesAsync();
         }
-
     }
 }
